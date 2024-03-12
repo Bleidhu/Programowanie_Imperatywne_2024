@@ -41,31 +41,68 @@ int stack_state(void) {
 int queue[QUEUE_SIZE];
 int in = 0, curr_nr = 0;
 
-int queue_push(int in_nr) { // in_nr clients try to enter the queue
-	for(int i = 0; i < in_nr + 1; ++i)
+void queue_print(void) {
+	for(int i = 0; i < in; ++i)
 	{
-		if(i + in < QUEUE_SIZE)
-		{
-			queue[in + 1 +  i] = curr_nr;
-		}
-		curr_nr += 1;
+		printf("%d ", queue[i]);
 	}
 }
 
-int queue_pop(int out_nr) { // out_nr clients leaves the queue
+int queue_push(int in_nr) { // in_nr clients try to enter the queue
+	int left_space = QUEUE_SIZE - in;
+	int operations = in_nr;
+	if(in_nr > left_space)
+	{
+		operations = left_space;
+	}
 
+	for(int i = 0; i < left_space; ++i)
+	{
+		queue[in + i] = curr_nr + i + 1;
+	}
+
+	curr_nr += in_nr;
+	in = in + operations;
+
+	if(in_nr > left_space)
+	{
+		return OVERFLOW;
+	} else
+	{
+		return OK;
+	}
+
+}
+
+int queue_pop(int out_nr) { // out_nr clients leaves the queue
+	int items_to_remove = out_nr;
+	if(out_nr > in){
+		items_to_remove = in;
+	}
+
+	in -= items_to_remove;
+
+	for(int i = 0; i < items_to_remove; ++i)
+	{
+		for(int j = 0; j < QUEUE_SIZE - 1; ++j)
+		{
+			queue[j] = queue[j + 1];
+		}
+	}
+
+	if(out_nr > items_to_remove)
+	{
+		return UNDERFLOW;
+	} else{
+		return in;
+	}
 }
 
 int queue_state(void) {
 	return in;
 }
 
-void queue_print(void) {
-	for(int i = 0; i < QUEUE_SIZE; ++i)
-	{
-		printf('%d', queue[i]);
-	}
-}
+
 
 // Queue with cyclic buffer
 
@@ -76,15 +113,38 @@ int out = 0, len = 0;
 
 
 int cbuff_push(int cli_nr) { // client with number cli_nr enters the queue
+	if(len == CBUFF_SIZE)
+	{
+		return OVERFLOW;
+	} else
+	{
+		cbuff[(out + len)%CBUFF_SIZE] = cli_nr;
+		len += 1;
+		return OK;
+	}
 }
 
 int cbuff_pop(void) { // longest waiting client leaves the queue
+	if(len == 0)
+	{
+		return UNDERFLOW;
+	} else{
+		len -= 1;
+		int elem = cbuff[out];
+		out = (out + 1)%CBUFF_SIZE;
+		return elem;
+	}
 }
 
 int cbuff_state(void) {
+	return len;
 }
 
 void cbuff_print(void) {
+	for(int i = 0; i < len; ++i)
+	{
+		printf("%d ", cbuff[(out + i)%CBUFF_SIZE]);
+	}
 }
 
 int main(void) {
