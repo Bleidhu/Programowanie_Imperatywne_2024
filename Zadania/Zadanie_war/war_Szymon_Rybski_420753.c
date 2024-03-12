@@ -22,7 +22,7 @@ void shuffle(int t[], int size) {
 	}
 	for(int i = 0; i < size-1; ++i)
 	{
-		int k = random_from_interval(i, size);
+		int k = random_from_interval(i, size - 1);
 		swap(t, i, k);
 	}
 }
@@ -86,13 +86,17 @@ void game(int n, int player_A[], int player_B[], int max_conflicts, int simplifi
 	int a_out = 0, b_out = 0;
 	int a_len = n/2, b_len = n/2;
 	int war_cards = 1;
-	while(curr_conflicts < max_conflicts && a_len-war_cards >= 0 && b_len-war_cards >= 0)
+	while(curr_conflicts <= max_conflicts && a_len-war_cards >= 0 && b_len-war_cards >= 0)
 	{
 		int a_card = player_A[(a_out + war_cards - 1 + n)%n];
 		int b_card = player_B[(b_out + war_cards - 1 + n)%n];
+		
 
-		cbuff_print(player_A, &a_len, &a_out, n);
-		printf("\n");
+		/* cbuff_print(player_A, &a_len, &a_out, n);
+			printf("\n");
+		cbuff_print(player_B, &b_len, &b_out, n);
+			printf("\n");
+		printf("%d %d %d\n", curr_conflicts, a_len, b_len); */
 		
 		if(a_card/NUMBER_OF_COLORS < b_card/NUMBER_OF_COLORS)
 		{
@@ -116,16 +120,16 @@ void game(int n, int player_A[], int player_B[], int max_conflicts, int simplifi
 		}
 	}
 
-	if(a_len > 0 && b_len > 0 && curr_conflicts==max_conflicts)
+	if(a_len > 0 && b_len > 0 && curr_conflicts>max_conflicts)
 	{
 		printf("%i %i %i", 0, a_len, b_len);
-	} else if((a_len-war_cards < 0 || b_len - war_cards < 0) && war_cards >= 1){
+	} else if((a_len-war_cards < 0 || b_len - war_cards < 0) && war_cards > 1){
 		printf("%i %i %i", 1, a_len, b_len);
 	} else if(a_len > 0)
 	{
-		printf("%i %i", 2, curr_conflicts);
+		printf("%i  %i", 2, curr_conflicts);
 	} else{
-		printf("%i ", 3);
+		printf("%i \n", 3);
 		cbuff_print(player_B, &b_len, &b_out, n);
 	}
 }
