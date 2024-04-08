@@ -70,30 +70,93 @@ void wc(int *nl, int *nw, int *nc) {
 
 void char_count(int char_no, int *n_char, int *cnt) {
 	char tmp;
-	int counter[MAX_CHARS + 1] = {0};
-
 	while((tmp=getchar()) != EOF)
 	{
 		
-		if(tmp >= FIRST_CHAR && tmp <= LAST_CHAR)
+		if(tmp >= FIRST_CHAR && tmp < LAST_CHAR)
 		{
-			counter[tmp - LAST_CHAR] += 1;
+			count[tmp - FIRST_CHAR] += 1;
 		}
 	}
 
 	int indexes[MAX_CHARS + 1];
 	for(int i = 0; i < MAX_CHARS + 1; ++i)
 	{
-		indexes[i] = FIRST_CHAR + i;
+		indexes[i] = i;
 	}
 
-	//qsort()
+
+	qsort(indexes, MAX_CHARS, sizeof(int), cmp);
+	*n_char = FIRST_CHAR + indexes[char_no - 1];
+	*cnt = count[*n_char - FIRST_CHAR];
 }
 
 void bigram_count(int bigram_no, int bigram[]) {
+	int indexes[MAX_BIGRAMS];
+	for(int i = 0; i < MAX_BIGRAMS; ++i)
+	{
+		indexes[i] = i;
+	}
+
+	
+	char tmp1 = getchar();
+	char tmp2;
+	while((tmp2=getchar()) != EOF)
+	{
+		
+		if(tmp1 >= FIRST_CHAR && tmp1 < LAST_CHAR && tmp2 >= FIRST_CHAR && tmp2 < LAST_CHAR)
+		{
+			count[(tmp1 - FIRST_CHAR)*MAX_CHARS + tmp2 - FIRST_CHAR] += 1;
+		}
+		tmp1 = tmp2;
+	}
+
+	
+
+	qsort(indexes, MAX_BIGRAMS, sizeof(int), cmp_di);
+	bigram[0]=indexes[bigram_no-1]/MAX_CHARS + FIRST_CHAR;
+	bigram[1]=indexes[bigram_no-1]%MAX_CHARS + FIRST_CHAR;
+	bigram[2] = count[(bigram[0] - FIRST_CHAR) *MAX_CHARS + bigram[1] - FIRST_CHAR];
 }
 
 void find_comments(int *line_comment_counter, int *block_comment_counter) {
+	*line_comment_counter=*block_comment_counter=0;
+	int active_multilines = 0;
+	int active_single_lines = 0;
+
+	char tmp1 = getchar();
+	char tmp2;
+	while((tmp2=getchar()) != EOF)
+	{
+		
+		
+		if(tmp1=='/')
+		{
+			if (tmp2=='/')
+			{
+				while(getchar()!='\n');
+				*line_comment_counter+=1;
+			} else if(tmp2=='*')
+			{
+				tmp1 = tmp2;
+				tmp2=getchar();
+				if(tmp2=='/')
+				{
+					tmp1=tmp2;
+					tmp2=getchar();
+				}
+				while (!(tmp1=='*' && tmp2=='/'))
+				{
+					tmp1=tmp2;
+					tmp2=getchar();
+				}
+				*block_comment_counter+=1;
+			}
+		}
+
+		tmp1=tmp2;
+	}
+
 }
 
 #define MAX_LINE 128

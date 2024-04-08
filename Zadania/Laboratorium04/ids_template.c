@@ -16,7 +16,7 @@ int cmp(const void*, const void*);
 
 char identifiers[MAX_IDS][MAX_ID_LEN];
 
-const char *keywords[] = {
+const char* keywords[] = {
 	"auto", "break", "case", "char",
 	"const", "continue", "default", "do",
 	"double", "else", "enum", "extern",
@@ -28,11 +28,105 @@ const char *keywords[] = {
 };
 
 int find_idents() {
+	char tmp1 = getchar();
+	char tmp2;
+	int last_ident = 0;
+	char current_string[MAX_ID_LEN] = { 0 };
+	int last_current_idx = 0;
+	while ((tmp2 = getchar()) != EOF)
+	{
+		if (tmp1 == '/' && tmp2 == '*')
+		{
+
+			while (!(tmp1 == '*' && tmp2 == '/'))
+			{
+				tmp1 = tmp2;
+				tmp2 = getchar();
+			}
+			tmp1 = tmp2;
+			tmp2 = getchar();
+			tmp1 = tmp2;
+			tmp2 = getchar();
+		}
+		if (tmp1 == '/' && tmp2 == '/')
+		{
+			while (tmp2 != '\n')
+			{
+				tmp1 = tmp2;
+				tmp2 = getchar();
+
+			}
+		}
+		if (tmp2 == '\'')
+		{
+			while (!(tmp1 != '\\' && tmp2 == '\''))
+			{
+				tmp1 = tmp2;
+				tmp2 = getchar();
+			}
+			tmp1 = tmp2;
+			tmp2 = getchar();
+			tmp1 = tmp2;
+			tmp2 = getchar();
+		}
+		if (tmp2 == '"')
+		{
+			while (!(tmp1 != '\\' && tmp2 == '"'))
+			{
+				tmp1 = tmp2;
+				tmp2 = getchar();
+			}
+			tmp1 = tmp2;
+			tmp2 = getchar();
+			tmp1 = tmp2;
+			tmp2 = getchar();
+
+		}
+
+		if (((tmp2 >= '0' && tmp2 <= '9' && last_current_idx != 0) || (tmp2 >= 'A' && tmp2 <= 'Z')
+			|| (tmp2 >= 'a' && tmp2 <= 'z') || (tmp2 == '_')))
+		{
+			current_string[last_current_idx] = tmp2;
+			last_current_idx += 1;
+		}
+		else if (last_current_idx > 0)
+		{
+
+			if ((tmp2 == ' ' || tmp2 == '\n'))
+			{
+
+				int notInReserved = 1;
+				for (int i = 0; i < 31 && notInReserved; ++i)
+				{
+					notInReserved = strcmp(&current_string, keywords[i]);
+				}
+
+				if (notInReserved)
+				{
+					int unique = 1;
+					for (int i = 0; i < last_ident && unique; ++i)
+					{
+						unique = strcmp(identifiers[last_ident], current_string);
+					}
+					if (unique)
+					{
+						last_ident += 1;
+						strcpy(identifiers[last_ident], current_string);
+					}
+				}
+			}
+			memset(current_string, 0, last_current_idx);
+			last_current_idx = 0;
+		}
+		tmp1 = tmp2;
+	}
+
+	return last_ident;
 }
 
 int cmp(const void* first_arg, const void* second_arg) {
-	char *a = *(char**)first_arg;
-	char *b = *(char**)second_arg;
+	char* a = *(char**)first_arg;
+	char* b = *(char**)second_arg;
 	return strcmp(a, b);
 }
 
