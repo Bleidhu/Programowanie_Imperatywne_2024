@@ -103,6 +103,16 @@ void backward_substitution_index(double A[][SIZE], const int indices[], double x
 		x[indices[i]] /= A[indices[i]][i];
 	}
 
+	double tmp[n];
+
+	for(int i = 0; i < n; ++i)
+	{
+		tmp[i] = x[indices[i]];
+	}
+	for(int i = 0; i < n; ++i)
+	{
+		x[i] = tmp[i];
+	}
 
 }
 
@@ -144,7 +154,7 @@ double gauss(double A[][SIZE], const double b[], double x[], const int n, const 
 
 		if (abs(A[rowsIndexes[p]][p]) < eps)
 		{
-			return 0;
+			return -0;
 		}
 		for (int a = p + 1; a < n; ++a)
 		{
@@ -160,17 +170,6 @@ double gauss(double A[][SIZE], const double b[], double x[], const int n, const 
 			}
 		}
 	}
-
-	for (int i = 0; i < n; ++i)
-	{
-		for (int j = 0; j < n; ++j)
-		{
-			printf("%.1f ", A[rowsIndexes[i]][j]);
-		}
-		printf("%.2f", x[rowsIndexes[i]]);
-		printf("\n");
-	}
-	printf("\n");
 
 	if (b != NULL && x != NULL)
 	{
@@ -194,6 +193,118 @@ double gauss(double A[][SIZE], const double b[], double x[], const int n, const 
 // 4. Returns the determinant; B contains the inverse of A (if det(A) != 0)
 // If max A[i][i] < eps, function returns 0.
 double matrix_inv(double A[][SIZE], double B[][SIZE], int n, double eps) {
+	int rowsIndexes[n];
+
+		for (int i = 0; i < n; ++i)
+	{
+		rowsIndexes[i] = i;
+	}
+
+
+	for(int i = 0; i < n; ++i)
+	{
+		for(int j = 0; j < n;++j)
+		{
+			B[i][j] = 0.0;
+
+			if(i == j)
+			{
+				B[i][j] = 1.0;
+			}		
+		}	
+	}
+
+
+	
+
+	double swaps = 1;
+	for (int p = 0; p < n; ++p)
+	{
+		for (int i = p + 1; i < n; ++i)
+		{
+			if (abs(A[rowsIndexes[i]][p]) > abs(A[rowsIndexes[p]][p]))
+			{
+				int tmp = rowsIndexes[i];
+				rowsIndexes[i] = rowsIndexes[p];
+				rowsIndexes[p] = tmp;
+				swaps *= -1;
+			}
+		}
+
+
+		
+
+		
+
+		if (abs(A[rowsIndexes[p]][p]) < eps)
+		{
+			return 0.0;
+		}
+		for (int a = 0; a < n; ++a)
+		{
+			if(a == p)
+			{
+				continue;
+			}
+			double coeff = A[rowsIndexes[a]][p] / A[rowsIndexes[p]][p];
+			for (int b = 0; b < n; ++b)
+			{
+				if(b == p)
+				{
+					A[rowsIndexes[a]][p] = 0.0;
+					B[rowsIndexes[a]][p] -= coeff * B[rowsIndexes[p]][p];
+					continue;
+				}
+				A[rowsIndexes[a]][b] -= coeff * A[rowsIndexes[p]][b];
+				B[rowsIndexes[a]][b] -= coeff * B[rowsIndexes[p]][b];
+			}
+		}
+
+	
+
+	}
+
+	double coeff = A[rowsIndexes[n-1]][n-1];
+		
+
+	for (int b = 0; b < n; ++b)
+	{
+		if(b==0)
+				swaps*=(coeff);
+		A[rowsIndexes[n-1]][b] /= coeff;
+		B[rowsIndexes[n-1]][b] /= coeff;
+	}
+		
+
+	double tmp[n][n];
+
+	for(int i = 0; i < n; ++i)
+	{
+		for(int j = 0; j < n; ++j)
+	{
+		tmp[i][j] = B[rowsIndexes[i]][j];
+	}
+	}
+	for(int i = 0; i < n; ++i)
+	{
+		for(int j = 0; j < n; ++j)
+	{
+		B[i][j] = tmp[i][j];
+	}
+	}
+
+
+	double coefficient = A[rowsIndexes[0]][0];
+
+	for (int i = 1; i < n; ++i)
+	{
+		coefficient *= A[rowsIndexes[i]][i];
+	}
+	coefficient*=swaps;
+	return coefficient;
+
+
+
 }
 
 int main(void) {
