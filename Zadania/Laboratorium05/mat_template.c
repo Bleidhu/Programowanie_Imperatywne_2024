@@ -220,7 +220,7 @@ double matrix_inv(double A[][SIZE], double B[][SIZE], int n, double eps) {
 	double swaps = 1;
 	for (int p = 0; p < n; ++p)
 	{
-		for (int i = p + 1; i < n; ++i)
+		for (int i = p+1; i < n; ++i)
 		{
 			if (abs(A[rowsIndexes[i]][p]) > abs(A[rowsIndexes[p]][p]))
 			{
@@ -232,11 +232,7 @@ double matrix_inv(double A[][SIZE], double B[][SIZE], int n, double eps) {
 		}
 
 
-		
-
-		
-
-		if (abs(A[rowsIndexes[p]][p]) < eps)
+		if (abs(A[rowsIndexes[p]][p]) < eps && p != n-1)
 		{
 			return 0.0;
 		}
@@ -249,12 +245,6 @@ double matrix_inv(double A[][SIZE], double B[][SIZE], int n, double eps) {
 			double coeff = A[rowsIndexes[a]][p] / A[rowsIndexes[p]][p];
 			for (int b = 0; b < n; ++b)
 			{
-				if(b == p)
-				{
-					A[rowsIndexes[a]][p] = 0.0;
-					B[rowsIndexes[a]][p] -= coeff * B[rowsIndexes[p]][p];
-					continue;
-				}
 				A[rowsIndexes[a]][b] -= coeff * A[rowsIndexes[p]][b];
 				B[rowsIndexes[a]][b] -= coeff * B[rowsIndexes[p]][b];
 			}
@@ -263,16 +253,19 @@ double matrix_inv(double A[][SIZE], double B[][SIZE], int n, double eps) {
 	
 
 	}
+	for(int i = 0; i < n; ++i)
+	{
 
-	double coeff = A[rowsIndexes[n-1]][n-1];
+	double coeff = A[rowsIndexes[i]][i];
 		
 
 	for (int b = 0; b < n; ++b)
 	{
 		if(b==0)
 				swaps*=(coeff);
-		A[rowsIndexes[n-1]][b] /= coeff;
-		B[rowsIndexes[n-1]][b] /= coeff;
+		A[rowsIndexes[i]][b] /= coeff;
+		B[rowsIndexes[i]][b] /= coeff;
+	}
 	}
 		
 
