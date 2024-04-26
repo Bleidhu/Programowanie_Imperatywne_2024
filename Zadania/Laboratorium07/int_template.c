@@ -32,10 +32,10 @@ double quad_rect_left(Func1vFp f1, double a, double b, int n) {
 	double h = (b - a)/n;
 	for(int i = 0; i < n; ++i)
 	{
-		sum += (*f1)(a + i*h);
+		sum += h*f1(a + i*h);
 	}
 
-	return sum*h;
+	return sum;
 }
 
 // rectangle rule, rightpoint
@@ -44,36 +44,36 @@ double quad_rect_right(Func1vFp f1, double a, double b, int n) {
 	double h = (b - a)/n;
 	for(int i = 0; i < n; ++i)
 	{
-		sum += (*f1)(a + (i+1)*h);
+		sum += h*f1(a + (i+1)*h);
 	}
 
-	return sum*h;
+	return sum;
 }
 
 // rectangle rule, midpoint
 double quad_rect_mid(Func1vFp f1, double a, double b, int n) {
-	double sum = 0.0;
-	double h = (b - a)/n;
+	double suma = 0.0;
+	double h = (b - a)/(double)n;
 	for(int i = 0; i < n; ++i)
 	{
-		sum += (*f1)(a*(i+0.5)*h);
+		suma+= h*f1(a + (i+0.5)*h);
 	}
 
-	return sum*h;
+	return suma;
 }
 
 // trapezoidal rule
 double quad_trap(Func1vFp func, double a, double b, int n) {
 	double sum = 0.0;
-	double h = (b-a)/n;
+	double h = (b-a)/(double)n;
 
-	double beg = (*func)(a);
-	double end = (*func)(a+h);
+	double beg = func(a);
+	double end = func(a+h);
 	for(int i = 0; i < n; ++i)
 	{
-		sum+=h*(beg + end);
+		sum+=1.0/2.0 * h*(beg + end);
 		beg = end;
-		end = (*func)(a+(i+1)*h);
+		end = func(a+(i+2)*h);
 	}
 	
 	return sum;
@@ -81,6 +81,21 @@ double quad_trap(Func1vFp func, double a, double b, int n) {
 
 // Simpson's rule
 double quad_simpson(Func1vFp f, double a, double b, int n) {
+	double sum = 0.0;
+	double h = (b - a)/n;
+	double beg = f(a);
+	double end = f(a+h);
+	double mid = f((2*a+h)/2.0);
+	for(int i = 0; i < n; ++i)
+	{
+		sum+=1.0/6.0*h*(beg + end + 4.0*mid);
+		beg = end;
+		end = f(a+(i+2)*h);
+		mid = f(a+(i+1.5)*h);
+	}
+	
+	return sum;
+
 }
 
 // pointer to quadrature function
@@ -96,15 +111,34 @@ QuadratureFp quad_tab[] = {
 // calls 'quad_no' quadrature function for 'fun_no' integrand function
 // on interval [a, b] and n subintervals
 double quad_select(int fun_no, int quad_no, double a, double b, int n) {
+	return((quad_tab[quad_no])(func_tab[fun_no], a, b, n));
 }
 
 // adaptive algorithm
 double recurs(Func1vFp f, double a, double b, double S, double delta, QuadratureFp quad, int level) {
-}
+	if(level > RECURS_LEVEL_MAX)
+	{
+		return NAN;
+	}
+	double c = (a+b)/2;
+	double sum_a = quad(f, a, c, 1);
+	double sum_b = quad(f, c, b, 1);
+	if(fabs( S-sum_a - sum_b) < delta)
+	{
+		return sum_a + sum_b;
+	} else
+	{
+		return recurs(f, a, c, sum_a, delta/2, quad, level + 1) + recurs(f,c,b, sum_b, delta/2, quad, level + 1);
+	}
+	}
 
 // initialization for adaptive algorithm
 double init_recurs(Func1vFp f, double a, double b, double delta, QuadratureFp quad) {
-}
+	double sum = quad(f, a, b, 1);
+
+	double res = recurs(f, a, b, sum, delta, quad, 0);
+	return res;
+	}
 
 // double integrals
 
@@ -126,8 +160,20 @@ double upper_bound2(double x) {
 
 // rectangle rule (leftpoint) - double integral over rectangular domain
 double dbl_integr(Func2vFp f, double x1, double x2, int nx, double y1, double y2, int ny) {
-}
+	double sum = 0.0;
+	double hy = (y2 - y1)/ny;
+	double hx = (x2 - x1)/nx;
+	for(int i = 0; i < ny; ++i)
+	{
+		
+		for(int j = 0; j < nx; ++j)
+		{
+			sum += f(x1 + j*hx, y1 + i*hy);
+		}
+	}
 
+	return hx*hy*sum;
+}
 // rectangle rule (midpoint) - double integral over normal domain with respect to the x-axis
 double dbl_integr_normal_1(Func2vFp f, double x1, double x2, int nx, double hy,
 						   Func1vFp fg, Func1vFp fh) {
