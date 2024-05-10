@@ -26,45 +26,59 @@ typedef int (*ComparFp)(const void*, const void*);
 
 //0 - wrong order 1-right order 2-same
 int cmp_date(const void* d1, const void* d2) {
-	Date a = *((Date*)d1);
-	Date b = *((Date*)d2);
+	Date* a = ((Date*)d1);
+	Date* b = ((Date*)d2);
 
-	if (a.year != b.year)
+	if (a->year != b->year)
 	{
-		return a.year < b.year;
-	}
-	else if (a.month != b.month)
-	{
-		return a.month < b.month;
-	}
-	else if (a.day != b.day)
-	{
-		return a.day < b.day;
-	}
-	else
-	{
-		return 2;
-	}
+		if (a->month != b->month)
+		{
+			if (a->day != b->day)
+			{
+				return b->day - a->day;
+			}
+			return b->month - a->month;
+		}
+		return b->year - a->year;
 
+	}
 }
 
 int cmp(const void* a, const void* b) {
-	Food _a = *((Food*)a);
-	Food _b = *((Food*)b);
+	Food* _a = ((Food*)a);
+	Food* _b = ((Food*)b);
 
-	return compare_date(&_a.valid_date, &_b.valid_date);
+	char res = compare_date(&_a->valid_date, &_b->valid_date);
+	if (res == 0)
+	{
+		if (_a->price == _b->price)
+		{
+			if (_a->amount == _b->amount)
+			{
+				return strcmp(_a->name, _b->name);
+			}
+			return _a->amount - _b->amount;
+		}
+		return _a->price > _b->price ? 1 : -1;
+	}
+	return res;
+
 
 }
 
-void* bsearch2(const void* key, const void* base, const size_t nmemb,
+void* bsearch2(const void* key, const void* base, const size_t nitems,
 	const size_t size, const ComparFp compar, char* result) {
 	int i = 0;
 
-	int last_cmp = 1;
-	while (i < size && last_cmp == 1)
+	for (size_t i = 0; i < nitems; ++i)
 	{
-		last_cmp = *ComparFp(key)
-			i += 1;
+		int res = compar(key, base + i * size);
+		if (res <= 0)
+		{
+
+			*result = (res == 0 ? 1 : 0);
+			return base + i * size;
+		}
 	}
 
 }
@@ -72,10 +86,48 @@ void* bsearch2(const void* key, const void* base, const size_t nmemb,
 void print_art(Food* p, const int n, const char* art) {
 }
 
-Food* add_record(const Food* tab, int* np, const ComparFp compar, const Food* new) {
+Food* add_record(Food* tab, int* np, const ComparFp compar, const Food* new) {
+	char res;
+	Food* addr = bsearch2(new, tab, np, sizeof(Food), compar, &res);
+
+	if (res > 0)
+	{
+
+		addr->amount += new->amount;
+		return addr;
+	}
+	else
+	{
+		*np++;
+		int index = addr - tab;
+		if (index < *np)
+		{
+
+			for (int i = *np - 2; i > index; --i)
+			{
+				tab[i + 1] = tab[i];
+			}
+		}
+		tab[index] = *new;
+		return tab + index;
+	}
+
+
 }
 
+
+
+void string_to_date(char* datestring, Date* date)
+{
+	date->day = 10 * (*(datestring + 1) - '0');
+}
+
+
 int read_goods(Food* tab, const int no, FILE* stream, const int sorted) {
+	Food tmp;
+	char dateString[10] = { 10 };
+	fscanf(stream, "%s%f%d%s", tmp.name, tmp.price, &tmp.amount, &dateString);
+
 }
 
 int cmp_qs(const void* a, const void* b) {
