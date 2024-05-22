@@ -29,84 +29,111 @@ int cmp_date(const void* d1, const void* d2) {
 	Date* a = ((Date*)d1);
 	Date* b = ((Date*)d2);
 
-	if (a->year != b->year)
+	if (a->year == b->year)
 	{
-		if (a->month != b->month)
+		if (a->month == b->month)
 		{
-			if (a->day != b->day)
-			{
-				return b->day - a->day;
-			}
-			return b->month - a->month;
+			return  a->day - b->day;
+
 		}
-		return b->year - a->year;
+		return a->month - b->month;
 
 	}
-}
 
+	return  a->year - b->year;
+}
+int cmp_date_from_food(const void* d1, const void* d2) {
+	Food* a = ((Food*)d1);
+	Food* b = ((Food*)d2);
+
+	if (a->valid_date.year == b->valid_date.year)
+	{
+		if (a->valid_date.month == b->valid_date.month)
+		{
+			return  a->valid_date.day - b->valid_date.day;
+
+		}
+		return a->valid_date.month - b->valid_date.month;
+
+	}
+
+	return  a->valid_date.year - b->valid_date.year;
+}
 int cmp(const void* a, const void* b) {
 	Food* _a = ((Food*)a);
 	Food* _b = ((Food*)b);
 
-	char res = compare_date(&_a->valid_date, &_b->valid_date);
+	char res = strcmp(_a->name, _b->name);
 	if (res == 0)
 	{
 		if (_a->price == _b->price)
 		{
-			if (_a->amount == _b->amount)
-			{
-				return strcmp(_a->name, _b->name);
-			}
-			return _a->amount - _b->amount;
+			return cmp_date(&_a->valid_date, &_b->valid_date);
+
 		}
 		return _a->price > _b->price ? 1 : -1;
 	}
 	return res;
-
-
 }
 
 void* bsearch2(const void* key, const void* base, const size_t nitems,
 	const size_t size, const ComparFp compar, char* result) {
-	int i = 0;
 
-	for (size_t i = 0; i < nitems; ++i)
+	size_t i = 0;
+	int res = compar(key, ((Food*)base) + i);
+	while (i < nitems && res < 0)
 	{
-		int res = compar(key, base + i * size);
-		if (res <= 0)
-		{
+		++i;
+		res = compar(((Food*)base) + i, key);
 
-			*result = (res == 0 ? 1 : 0);
-			return base + i * size;
-		}
 	}
+	*result = (res == 0 ? 1 : 0);
+	return ((Food*)base) + i;
 
 }
 
 void print_art(Food* p, const int n, const char* art) {
+	for (int i = 0; i < n; i++) {
+		if (strcmp(p[i].name, art) == 0)
+			printf("%.2f %i %.2i.%.2i.%i \n", p[i].price, p[i].amount, p[i].valid_date.day, p[i].valid_date.month,
+				p[i].valid_date.year);
+	}
 }
 
+void print_art2(Food* p, const int n, const char* art) {
+	for (int i = 0; i < n; i++) {
+		printf("%.2f %i %.2i.%.2i.%i \n", p[i].price, p[i].amount, p[i].valid_date.day, p[i].valid_date.month,
+			p[i].valid_date.year);
+	}
+}
 Food* add_record(Food* tab, int* np, const ComparFp compar, const Food* new) {
 	char res;
-	Food* addr = bsearch2(new, tab, np, sizeof(Food), compar, &res);
+	Food* addr = (Food*)bsearch2(new, tab, *np, sizeof(Food), compar, &res);
 
-	if (res > 0)
+	if (res == 1)
 	{
 
 		addr->amount += new->amount;
+		int ammo = addr->amount;
+		int tmp = ammo;
 		return addr;
 	}
 	else
 	{
-		*np++;
+		*np = *np + 1;
 		int index = addr - tab;
+		if (*np == FOOD_MAX)
+		{
+			return NULL;
+		}
 		if (index < *np)
 		{
 
-			for (int i = *np - 2; i > index; --i)
+			for (int i = *np - 2; i >= index; --i)
 			{
 				tab[i + 1] = tab[i];
 			}
+
 		}
 		tab[index] = *new;
 		return tab + index;
@@ -119,14 +146,50 @@ Food* add_record(Food* tab, int* np, const ComparFp compar, const Food* new) {
 
 void string_to_date(char* datestring, Date* date)
 {
-	date->day = 10 * (*(datestring + 1) - '0');
+	int vals[3] = { 0, 0, 0 };
+	int index = 0;
+	int multipl = 1;
+	for (int i = 9; i >= 0; --i)
+	{
+		if (datestring[i] == 0)
+		{
+			continue;
+		}
+		if (datestring[i] == '.')
+		{
+			multipl = 1;
+			index += 1;
+			continue;
+
+		}
+
+		vals[index] += (datestring[i] - '0') * multipl;
+		multipl *= 10;
+	}
+
+	date->day = vals[2];
+	date->month = vals[1];
+	date->year = vals[0];
+
+
 }
 
 
 int read_goods(Food* tab, const int no, FILE* stream, const int sorted) {
-	Food tmp;
-	char dateString[10] = { 10 };
-	fscanf(stream, "%s%f%d%s", tmp.name, tmp.price, &tmp.amount, &dateString);
+	int np = 0;
+	for (int i = 0; i < no; ++i) {
+		Food tmp;
+		char dateString[10] = { '0' };
+		fscanf(stream, "%s %f %d %s", tmp.name, &tmp.price, &tmp.amount, dateString);
+		Date tmp_date;
+		string_to_date(dateString, &tmp_date);
+		tmp.valid_date = tmp_date;
+		add_record(tab, &np, cmp, &tmp);
+		print_art2(tab, np, "lol");
+		printf("------\n");
+	}
+
+	return np;
 
 }
 
@@ -141,7 +204,50 @@ int cmp_bs(const void* a, const void* b) {
 	return cmp_date(pd, &fb->valid_date);
 }
 
-float value(Food* food_tab, const size_t n, const Date curr_date, const int days) {
+float value(Food* food_tab, size_t n, Date curr_date, int anticip) {
+	time_t raw_time;
+	time(&raw_time);
+
+	struct tm* target_date = localtime(&raw_time);
+	target_date->tm_mday = curr_date.day;
+	target_date->tm_mon = curr_date.month - 1;
+	target_date->tm_year = curr_date.year - 1900;
+
+	mktime(target_date);
+
+	target_date->tm_mday += anticip;
+
+	mktime(target_date);
+
+	Date valid_date = (Date){ target_date->tm_mday, target_date->tm_mon + 1, target_date->tm_year + 1900 };
+
+	qsort(food_tab, n, sizeof(Food), cmp);
+	Food f = {
+			.valid_date = valid_date,
+	};
+	char res;
+	Food* address = bsearch2(&f, food_tab, n, sizeof(Food), cmp, &res);
+
+	if (res == 0)
+		return 0;
+
+	float result = 0;
+
+	int index = address - food_tab;
+	int tmp = index;
+
+	while (tmp >= 0 && cmp_date(&food_tab[tmp].valid_date, &valid_date) == 0) {
+		result += food_tab[tmp].price * food_tab[tmp].amount;
+		tmp--;
+	}
+	tmp = index + 1;
+
+	while (tmp < n && cmp_date(&food_tab[tmp].valid_date, &valid_date) == 0) {
+		result += food_tab[tmp].price * food_tab[tmp].amount;
+		tmp++;
+	}
+
+	return result;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -154,7 +260,7 @@ enum BOOL { no, yes };
 
 struct Bit_data {
 	enum Sex sex :1;
-	enum BOOL in_line :1;
+	enum BOOL pretendent :1;   // =no - nie pretenduje (panuje albo nie żyje) ale jest w zbiorze dla spójności relacji.
 };
 
 typedef struct {
@@ -166,38 +272,178 @@ typedef struct {
 
 typedef struct {
 	char* par_name;
-	int index;
-} Parent;
+	int index_first;
+	int index_last;
+} Parent;    // strukturê mo¿na rozbudowaæ o pole liczby dzieci
 
-const Date primo_date = { 28, 10, 2011 }; // new succession act
+const Date primo_date = { 28, 10, 2011 }; // Data zmiany kolejnoœci sukcesji
 
-int cmp_primo(const Person* person1, const Person* person2) {
-	if (person1->bits.sex == person2->bits.sex) return 0;
-	if (person1->bits.sex == F && cmp_date(&person1->born, &primo_date) > 0) return 0;
-	if (person2->bits.sex == F && cmp_date(&person2->born, &primo_date) > 0) return 0;
-	return person2->bits.sex - person1->bits.sex;
+int person_cmp_parent(const void* _a, const void* _b) {
+	Person a = *((Person*)_a);
+	Person b = *((Person*)_b);
+
+	if (a.parent == NULL)
+		return 1;
+	if (b.parent == NULL)
+		return -1;
+
+	return strcmp(a.parent, b.parent);
 }
 
-int cmp_person(const void* a, const void* b) {
+int parent_cmp(const void* _a, const void* _b) {
+	Parent a = *((Parent*)_a);
+	Parent b = *((Parent*)_b);
+
+	return strcmp(a.par_name, b.par_name);
 }
 
-int cmp_parent(const void* a, const void* b) {
+int fill_indices_tab(Parent* idx_tab, Person* pers_tab, int size) {
+	int no_parents = 0;
+
+	for (int i = 0; i < size; i++) {
+		int found = 0;
+
+		for (int u = 0; u < no_parents; u++) {
+			if (strcmp(pers_tab[i].name, idx_tab[u].par_name) == 0) {
+				found = 1;
+				break;
+			}
+		}
+
+		if (!found) {
+			idx_tab[no_parents].par_name = pers_tab[i].name;
+
+			Person key = {
+					.parent = pers_tab[i].name
+			};
+
+			Person* address = bsearch(&key, pers_tab, size, sizeof(Person), person_cmp_parent);
+
+			if (address == NULL)
+				continue;
+
+			int index = (int)(address - pers_tab);
+			int tmp = index;
+
+			while (tmp > 0 && person_cmp_parent(&pers_tab[tmp], &pers_tab[tmp - 1]) == 0)
+				tmp--;
+
+			idx_tab[no_parents].index_first = tmp;
+			tmp = index;
+
+			while (tmp < size - 1 && person_cmp_parent(&pers_tab[tmp], &pers_tab[tmp + 1]) == 0)
+				tmp++;
+
+			idx_tab[no_parents].index_last = tmp;
+
+			no_parents++;
+		}
+	}
+
+	qsort(idx_tab, no_parents, sizeof(Parent), parent_cmp);
+
+	return no_parents;
 }
 
-int fill_indices_tab(Parent* idx_tab, const Person* pers_tab, const int size) {
-}
+void persons_shiftings(Person* person_tab, int size, Parent* idx_tab, int no_parents) {
+	int index = 0;
 
-void persons_shifts(Person* person_tab, const int size, Parent* idx_tab, const int no_parents) {
+	Person tmp[33];
+
+	while (index < size) {
+		Parent key = { .par_name = person_tab[index].name };
+		Parent* address = bsearch(&key, idx_tab, no_parents, sizeof(Parent), parent_cmp);
+
+		if (address != NULL) {
+			int to_copy = address->index_last - address->index_first + 1;
+
+			memmove(tmp, &person_tab[address->index_first], to_copy * sizeof(Person));
+			memmove(&person_tab[index + to_copy + 1], &person_tab[index + 1],
+				((address->index_first) - index - 1) * sizeof(Person));
+			memmove(&person_tab[index + 1], tmp, to_copy * sizeof(Person));
+
+			for (int i = 0; i < no_parents; i++) {
+				if (idx_tab[i].index_first < address->index_first) {
+					idx_tab[i].index_first += to_copy;
+					idx_tab[i].index_last += to_copy;
+				}
+			}
+		}
+
+		index += 1;
+	}
 }
 
 int cleaning(Person* person_tab, int n) {
+	for (int i = 0; i < n; i++) {
+		if (person_tab[i].bits.pretendent == no) {
+			memmove(&person_tab[i], &person_tab[i + 1], (n - i) * sizeof(Person));
+			i--;
+			n--;
+		}
+	}
+
+	return n;
 }
 
 void print_person(const Person* p) {
 	printf("%s\n", p->name);
 }
 
+void print_persons(const Person* person_tab, int n) {
+	for (int i = 1; i <= n; ++i, ++person_tab) printf("%2d %12s %s\n", i, person_tab->name, person_tab->parent);
+}
+
+int compare(const void* _a, const void* _b) {
+	Person a = *((Person*)_a);
+	Person b = *((Person*)_b);
+
+	if (a.parent == NULL)
+		return -1;
+	if (b.parent == NULL)
+		return 1;
+
+	int parent = strcmp(a.parent, b.parent);
+
+	if (parent < 0)
+		return -1;
+	else if (parent > 0)
+		return 1;
+	else {
+		int born_date = cmp_date(&a.born, &b.born);
+
+		if (cmp_date(&a.born, &primo_date) < 0 && cmp_date(&b.born, &primo_date) < 0) {
+			if (a.bits.sex == M && b.bits.sex == F)
+				return -1;
+			else if (a.bits.sex == F && b.bits.sex == M)
+				return 1;
+		}
+
+		if (born_date < 0)
+			return -1;
+		else if (born_date > 0)
+			return 1;
+		else {
+			if (a.bits.sex > b.bits.sex)
+				return 1;
+			else if (a.bits.sex < b.bits.sex)
+				return -1;
+			else
+				return 0;
+		}
+	}
+}
+
 int create_list(Person* person_tab, int n) {
+	qsort(person_tab, n, sizeof(Person), compare);
+
+	Parent parents_tab[33];
+
+	int no_parents = fill_indices_tab(parents_tab, person_tab, n);
+
+	persons_shiftings(person_tab, n, parents_tab, no_parents);
+
+	return cleaning(person_tab, n);
 }
 
 int main(void) {
@@ -257,6 +503,7 @@ int main(void) {
 		fgets(buff, RECORD_MAX, stdin);
 		sscanf(buff, "%d", &no);
 		n = read_goods(food_tab, no, stdin, 0);
+		print_art2(food_tab, n, "lol");
 		Date curr_date;
 		int days;
 		scanf("%d %d %d", &curr_date.day, &curr_date.month, &curr_date.year);
@@ -265,9 +512,10 @@ int main(void) {
 		break;
 	case 3: // succession
 		scanf("%d", &no);
-		const int no_persons = sizeof(person_tab) / sizeof(Person);
+		int no_persons = sizeof(person_tab) / sizeof(Person);
 		create_list(person_tab, no_persons);
 		print_person(person_tab + no - 1);
+
 		break;
 	default:
 		printf("NOTHING TO DO FOR %d\n", to_do);
